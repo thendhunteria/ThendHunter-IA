@@ -1,0 +1,6 @@
+{
+  "name": "TrendHunter AI",
+  "description": "Descubre tendencias rentables, analiza su potencial en tu ciudad y obtén recomendaciones paso a paso con Inteligencia Artificial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

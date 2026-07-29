@@ -1,0 +1,18 @@
+{
+  "schemas": {
+    "users": {
+      "__docId__": "uid",
+      "email": "string",
+      "referralCode": "string",
+      "referredBy": "string | null",
+      "isPremium": "boolean",
+      "createdAt": "timestamp"
+    }
+  },
+  "rules": {
+    "users": {
+      "read": "request.auth != null && (request.auth.uid == uid || resource.data.referralCode == request.query.referralCode)",
+      "write": "request.auth != null && request.auth.uid == uid"
+    }
+  }
+}
