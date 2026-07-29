@@ -22,71 +22,111 @@ if (process.env.GEMINI_API_KEY) {
 const mockTrends = [
   {
     id: '1',
-    title: 'Agencias de Automatización con IA',
-    description: 'Implementar flujos de trabajo con IA (como chatbots y automatización de correos) para negocios locales.',
-    cost: '$10,000 - $25,000 MXN',
-    roi: '1 a 2 meses',
-    potentialScore: 94,
+    title: 'E-commerce Transfronterizo LatAm-USA (Dropshipping de Nicho)',
+    description: 'Comercio digital conectando artesanías y productos orgánicos de Latinoamérica hacia consumidores en EE.UU.',
+    cost: '$180,000 - $350,000 MXN',
+    roi: '4 a 6 meses',
+    potentialScore: 96,
     category: 'Tecnología',
     type: 'Digital',
-    margin: '75%',
-    risk: 'Bajo',
-    suppliers: 'OpenAI, Make.com, Zapier, Anthropic',
-    googleSearches: '+310% en el último trimestre',
-    tiktokGrowth: '+480% en videos de #IAparaNegocios',
-    competition: 'Baja en ciudades medianas',
-    realTimeAlert: '⚡ Esta tendencia subió 220% en búsquedas locales y EE.UU. En México llegará a su pico máximo en 2 meses.'
+    scope: 'Mundial',
+    margin: '65%',
+    risk: 'Medio',
+    suppliers: 'Productores directos Oaxaca/Jalisco, Shopify, DHL Express, Stripe',
+    googleSearches: '+420% en búsquedas de productos artesanales en EE.UU.',
+    tiktokGrowth: '+650% en hashtags de #LatinBusiness',
+    competition: 'Media en marcas premium',
+    realTimeAlert: '🌎 Tendencia Global: Demanda disparada 310% en mercado hispano de EE.UU. e Italia.'
   },
   {
     id: '2',
-    title: 'Dark Kitchens Especializadas (Vegano/Keto)',
-    description: 'Cocinas ocultas enfocadas en nichos dietéticos con alta demanda en apps de delivery.',
-    cost: '$50,000 - $120,000 MXN',
-    roi: '5 a 8 meses',
-    potentialScore: 88,
-    category: 'Alimentos',
-    type: 'Híbrido',
-    margin: '40%',
-    risk: 'Medio',
-    suppliers: 'Proveedores locales orgánicos, Rappi/UberEats Partners',
-    googleSearches: '+180% en búsquedas de comida saludable a domicilio',
-    tiktokGrowth: '+250% en tendencias de recetas Keto/Vegan',
-    competition: 'Media en zonas metropolitanas',
-    realTimeAlert: '🔥 Alta demanda de entregas nocturnas en zonas corporativas.'
+    title: 'Agencias de Micro-Automatización con IA para Pymes Locales',
+    description: 'Implementación de agentes de WhatsApp y flujos de trabajo con IA desde casa para negocios de tu colonia.',
+    cost: '$4,000 - $12,000 MXN',
+    roi: '15 a 30 días',
+    potentialScore: 94,
+    category: 'Tecnología',
+    type: 'Digital',
+    scope: 'Local',
+    margin: '85%',
+    risk: 'Bajo',
+    suppliers: 'OpenAI, Make.com, ManyChat, WhatsApp Cloud API',
+    googleSearches: '+380% en automatización de ventas locales',
+    tiktokGrowth: '+520% en tutoriales de #IAparaNegocios',
+    competition: 'Baja en ciudades secundarias',
+    realTimeAlert: '⚡ Alta viabilidad: Mínimo capital inicial y retorno garantizado en el primer cliente.'
   },
   {
     id: '3',
-    title: 'Vending Machines Saludables',
-    description: 'Máquinas expendedoras con snacks orgánicos, sin gluten y saludables en oficinas y gimnasios.',
-    cost: '$40,000 - $90,000 MXN',
+    title: 'Cadena de Dark Kitchens de Comida Saludable Híbrida',
+    description: 'Cocinas industriales estratégicas enfocadas en planes de alimentación corporativa y keto para delivery nacional.',
+    cost: '$150,000 - $280,000 MXN',
     roi: '6 a 10 meses',
-    potentialScore: 82,
-    category: 'Retail',
-    type: 'Local',
-    margin: '50%',
-    risk: 'Bajo',
-    suppliers: 'Importadoras de Vending MX, Distribuidoras de Snacks Fitness',
-    googleSearches: '+140% en interés de instalaciones corporativas',
-    tiktokGrowth: '+190% en contenido de hábitos saludables',
-    competition: 'Baja en gimnasios y universidades privadas',
-    realTimeAlert: '📈 Crecimiento del 180% en contrataciones por empresas con políticas de bienestar.'
+    potentialScore: 90,
+    category: 'Alimentos',
+    type: 'Híbrido',
+    scope: 'Nacional',
+    margin: '45%',
+    risk: 'Medio-Alto',
+    suppliers: 'Distribuidoras de alimentos grado industrial, Rappi/UberEats Fleet',
+    googleSearches: '+210% en meal prep por suscripción',
+    tiktokGrowth: '+390% en recetas saludables y fitness',
+    competition: 'Media en metrópolis',
+    realTimeAlert: '🇲🇽 Tendencia Nacional: Alta demanda en parques industriales y zonas financieras.'
   },
   {
     id: '4',
-    title: 'Micro-servicios de Limpieza Ecológica',
-    description: 'Servicio de limpieza de oficinas y hogares utilizando únicamente productos biodegradables y ecológicos.',
-    cost: '$8,000 - $18,000 MXN',
-    roi: '1 a 3 meses',
+    title: 'Agencia de Marketing de Influencers de Nicho (UGC local)',
+    description: 'Gestión de creadores de contenido locales para restaurantes, clínicas y boutiques sin necesidad de oficina.',
+    cost: '$3,500 - $8,000 MXN',
+    roi: '1 mes',
     potentialScore: 89,
     category: 'Servicios',
-    type: 'Local',
-    margin: '65%',
+    type: 'Digital',
+    scope: 'América',
+    margin: '80%',
     risk: 'Bajo',
-    suppliers: 'Distribuidoras de químicos biodegradables certificados',
-    googleSearches: '+210% en servicios ecológicos para oficinas',
-    tiktokGrowth: '+320% en ASMR de limpieza sustentable',
-    competition: 'Muy baja con diferenciador ecológico',
-    realTimeAlert: '🌱 Tendencia impulsada por certificación ESG en pequeñas y medianas empresas.'
+    suppliers: 'CapCut, Canva Pro, CapCut, Redes Sociales',
+    googleSearches: '+290% en contenido UGC para marcas',
+    tiktokGrowth: '+480% en creadores de nicho',
+    competition: 'Baja en ciudades pequeñas',
+    realTimeAlert: '📣 Crecimiento acelerado: Marcas prefieren micro-influencers locales por alto engagement.'
+  },
+  {
+    id: '5',
+    title: 'Red de Estaciones de Recarga Solar y Vending Eco',
+    description: 'Instalación de tótems de carga para smartphones y vending de bebidas frías sostenibles en plazas y campus.',
+    cost: '$200,000 - $450,000 MXN',
+    roi: '8 a 12 meses',
+    potentialScore: 88,
+    category: 'Retail',
+    type: 'Local',
+    scope: 'Mundial',
+    margin: '55%',
+    risk: 'Medio',
+    suppliers: 'Importadoras de paneles solares, Vending Solutions MX',
+    googleSearches: '+190% en soluciones sostenibles urbanas',
+    tiktokGrowth: '+310% en tecnología verde',
+    competition: 'Muy baja',
+    realTimeAlert: '🌱 Tendencia Internacional: Crecimiento exponencial impulsado por iniciativas ESG corporativas.'
+  },
+  {
+    id: '6',
+    title: 'Servicio de Sanitización y Detailing Ecológico Móvil',
+    description: 'Lavado y detallado de autos a domicilio con productos sin agua y maquinaria de vapor portátil.',
+    cost: '$6,000 - $15,000 MXN',
+    roi: '1 a 2 meses',
+    potentialScore: 91,
+    category: 'Servicios',
+    type: 'Local',
+    scope: 'Local',
+    margin: '70%',
+    risk: 'Bajo',
+    suppliers: 'Biodegradables MX, Maquinaria de vapor portátil',
+    googleSearches: '+240% en car wash a domicilio ecológico',
+    tiktokGrowth: '+410% en videos de detallado automotriz',
+    competition: 'Baja en zonas residenciales',
+    realTimeAlert: '🚗 Negocio de rápida adopción: Inversión ligera con clientes recurrentes quincenales.'
   }
 ];
 
@@ -98,8 +138,12 @@ app.get('/api/trends', async (req, res) => {
       return res.json(mockTrends);
     }
 
-    const prompt = `Actúa como un consultor de negocios experto para la ciudad de "${city}". 
-Genera 10 ideas de negocios altamente rentables, innovadoras y específicas para las necesidades de ${city}. 
+    const prompt = `Actúa como un consultor de negocios internacional experto para la ciudad de "${city}". 
+Genera 10 ideas de negocios altamente rentables e innovadoras para ${city}.
+REQUISITO CLAVE:
+1. Las ideas DEBEN alternar de forma estricta entre Alta Inversión (Capital alto $100k-$400k MXN) y Baja Inversión (Micro capital $3k-$15k MXN viables).
+2. Deben cubrir diferentes alcances geográficos: Local, Nacional, América, y Mundial.
+
 Devuelve ÚNICAMENTE un array de objetos JSON válido, sin formato markdown adicional, con esta estructura exacta para cada idea:
 [
   {
@@ -111,13 +155,14 @@ Devuelve ÚNICAMENTE un array de objetos JSON válido, sin formato markdown adic
     "potentialScore": número entre 75 y 98,
     "category": "Tecnología | Alimentos | Retail | Servicios",
     "type": "Local | Digital | Híbrido",
+    "scope": "Local | Nacional | América | Mundial",
     "margin": "XX%",
     "risk": "Bajo | Medio | Alto",
     "suppliers": "Principales proveedores sugeridos",
     "googleSearches": "Métrica de búsquedas Google",
     "tiktokGrowth": "Métrica de crecimiento en TikTok",
     "competition": "Nivel de competencia en la zona",
-    "realTimeAlert": "Alerta estratégica de tendencia con porcentaje de crecimiento"
+    "realTimeAlert": "Alerta estratégica de tendencia con alcance geográfico"
   }
 ]`;
 
