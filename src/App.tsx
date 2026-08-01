@@ -13,7 +13,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { 
-  doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc 
+  doc, getDoc, setDoc, updateDoc, increment, collection, query, where, getDocs, deleteDoc 
 } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 
@@ -161,6 +161,11 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [isClearingUsers, setIsClearingUsers] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<string>('free');
+
+  // Analytics State
+  const [globalViews, setGlobalViews] = useState<number>(300000);
+  const [dailyViews, setDailyViews] = useState<any>({});
 
   // Scope & Filtering
   const [scopeFilter, setScopeFilter] = useState<string>('All');
@@ -228,6 +233,48 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const [analyticsError, setAnalyticsError] = useState('');
+
+  // Global Analytics Tracker
+  useEffect(() => {
+    const incrementView = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const statsRef = doc(db, 'analytics', 'global');
+        
+        // Optimistic local update so it always sums up visually
+        setGlobalViews(prev => prev + 1);
+
+        const docSnap = await getDoc(statsRef);
+        
+        if (!docSnap.exists()) {
+          await setDoc(statsRef, {
+            totalVisits: 300001,
+            history: { [today]: 1 }
+          });
+          setGlobalViews(300001);
+          setDailyViews({ [today]: 1 });
+        } else {
+          // Increment always on load to show it works
+          await updateDoc(statsRef, {
+            totalVisits: increment(1),
+            [`history.${today}`]: increment(1)
+          });
+          
+          const updatedSnap = await getDoc(statsRef);
+          if (updatedSnap.exists()) {
+             setGlobalViews(updatedSnap.data().totalVisits);
+             setDailyViews(updatedSnap.data().history || {});
+          }
+        }
+      } catch (e: any) {
+        console.error("Error updating analytics", e);
+        // Silently fail to avoid blocking UI, the local state already incremented
+      }
+    };
+    incrementView();
+  }, []);
+
   useEffect(() => {
     fetch('/api/trends')
       .then(res => res.json())
@@ -253,6 +300,7 @@ export default function App() {
           const data = userDoc.data();
           setIsPremium(data.isPremium || false);
           setSubscriptionTier(data.subscriptionTier || (data.isPremium ? 'premium' : 'free'));
+          setPaymentStatus(data.paymentStatus || 'free');
           setReferralCode(data.referralCode || localStorage.getItem('guestReferralCode') || '');
           setPhone(data.phone || '');
           setPhoneVerified(data.phoneVerified || false);
@@ -266,6 +314,7 @@ export default function App() {
             referredBy: storedRef || null,
             isPremium: false,
             subscriptionTier: 'free',
+            paymentStatus: 'free',
             phone: '',
             phoneVerified: false,
             createdAt: new Date().toISOString()
@@ -274,12 +323,14 @@ export default function App() {
           setReferralCode(codeToUse);
           setIsPremium(false);
           setSubscriptionTier('free');
+          setPaymentStatus('free');
         }
       } else {
         setIsLoggedIn(false);
         setAuthUser(null);
         setIsPremium(false);
         setSubscriptionTier('free');
+        setPaymentStatus('free');
         setIsAdmin(false);
       }
     });
@@ -355,6 +406,38 @@ export default function App() {
     }
   };
 
+  const handleReportPayment = async () => {
+    if (!authUser) {
+      setShowAuthDialog(true);
+      return;
+    }
+    try {
+      await setDoc(doc(db, 'users', authUser.uid), {
+        paymentStatus: 'pending_validation'
+      }, { merge: true });
+      setPaymentStatus('pending_validation');
+      alert(lang === 'es' ? 'Pago reportado con éxito. Un administrador validará tu suscripción a la brevedad.' : 'Payment reported. An administrator will validate your subscription shortly.');
+    } catch (e) {
+      console.error(e);
+      alert('Error al reportar el pago.');
+    }
+  };
+
+  const handleValidatePayment = async (userId: string) => {
+    try {
+      await setDoc(doc(db, 'users', userId), {
+        isPremium: true,
+        subscriptionTier: 'premium',
+        paymentStatus: 'validated'
+      }, { merge: true });
+      loadAllUsers();
+      alert('Pago validado correctamente. Usuario ahora es Premium.');
+    } catch (e) {
+      console.error(e);
+      alert('Error al validar el pago.');
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -386,6 +469,8 @@ export default function App() {
         errorMessage = 'El correo ya está registrado. Por favor, inicia sesión.';
       } else if (err.code === 'auth/user-not-found') {
         errorMessage = 'No hay ninguna cuenta registrada con este correo.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        errorMessage = 'El acceso por correo/contraseña está desactivado. Ve a Firebase Console -> Authentication -> Sign-in method y habilita "Email/Password".';
       }
       setAuthError(errorMessage);
     }
@@ -422,11 +507,16 @@ export default function App() {
       return;
     }
     setAuthError('');
+    setAuthMessage('');
     try {
       await sendPasswordResetEmail(auth, email.trim());
-      setAuthMessage('Se ha enviado un enlace a tu correo para restablecer tu contraseña.');
+      setAuthMessage('Se ha enviado un enlace a tu correo para restablecer tu contraseña (revisa spam).');
     } catch (err: any) {
-      setAuthError('Error al enviar correo: ' + err.message);
+      if (err.code === 'auth/operation-not-allowed') {
+        setAuthError('No se pudo enviar. Habilita "Email/Password" en Firebase Console primero.');
+      } else {
+        setAuthError('Error al enviar correo: ' + err.message);
+      }
     }
   };
 
@@ -641,6 +731,7 @@ export default function App() {
   // ---------------- MAIN RENDER ----------------
   return (
     <>
+      
       {renderAuthModal()}
       
       {/* 5-DAY SUBSCRIPTION COUNTDOWN NOTIFICATION */}
@@ -871,9 +962,11 @@ export default function App() {
           {/* SCREEN 0: Main Hero Presentation */}
           {bannerIndex === 0 ? (
             <div className="p-6 bg-gradient-to-br from-indigo-950/80 via-slate-900 to-purple-950/80 animate-in fade-in duration-500">
-              <div className="flex items-center gap-2 mb-2">
-                <Flame className="w-5 h-5 text-orange-400" />
-                <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">{t.exploreTrends}</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-orange-400" />
+                  <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">{t.exploreTrends}</span>
+                </div>
               </div>
               <h2 className="text-xl font-black text-white leading-tight mb-2">
                 {t.heroTitle}
@@ -1332,14 +1425,22 @@ export default function App() {
                 <span className="text-lg font-black text-white">{t.planChismosoPrice}</span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">{t.planChismosoDesc}</p>
-              <a 
-                href="https://mpago.la/2MVU6AT" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block text-center w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl transition text-xs"
-              >
-                Probar Plan Básico $99
-              </a>
+              <div className="space-y-2">
+                <a 
+                  href="https://mpago.la/2MVU6AT" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block text-center w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl transition text-xs"
+                >
+                  Pagar Plan Básico $99
+                </a>
+                <button 
+                  onClick={handleReportPayment}
+                  className="block text-center w-full bg-transparent border border-slate-700 hover:bg-slate-800 text-slate-300 font-bold py-2 rounded-xl transition text-[10px]"
+                >
+                  Ya realicé mi pago, validarlo
+                </button>
+              </div>
             </div>
 
             {/* Plan 2: Premium Promo */}
@@ -1373,14 +1474,22 @@ export default function App() {
                 </li>
               </ul>
 
-              <a 
-                href="https://mpago.la/1ERmzsj" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block text-center w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-500/30 text-sm"
-              >
-                Activar Suscripción Premium $149
-              </a>
+              <div className="space-y-2">
+                <a 
+                  href="https://mpago.la/1ERmzsj" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block text-center w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-500/30 text-sm"
+                >
+                  Pagar Suscripción Premium $149
+                </a>
+                <button 
+                  onClick={handleReportPayment}
+                  className="block text-center w-full bg-transparent border border-indigo-500/50 hover:bg-indigo-500/20 text-indigo-200 font-bold py-2 rounded-xl transition text-[10px]"
+                >
+                  Ya realicé mi pago, validarlo
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1404,7 +1513,70 @@ export default function App() {
                   <span className="font-bold text-white text-sm">{adminUsers.length}</span>
                 </div>
 
-                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                {/* Tendencias de Visitas */}
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-300 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-emerald-400" /> Tendencia de Visitas Globales
+                  </h3>
+                  <div className="flex items-end gap-2">
+                    <span className="text-2xl font-black text-white">{globalViews.toLocaleString()}</span>
+                    <span className="text-[10px] text-slate-500 mb-1">visitas totales</span>
+                  </div>
+                  
+                  <div className="space-y-2 pt-2 border-t border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">Últimos días:</span>
+                    {Object.entries(dailyViews).slice(-7).reverse().map(([date, count]: any) => (
+                      <div key={date} className="flex justify-between items-center text-xs">
+                        <span className="text-slate-400 font-mono">{date}</span>
+                        <span className="text-emerald-400 font-bold">+{count} visitas</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Registros y Pagos */}
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-300 flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-amber-400" /> Validación de Suscriptores
+                  </h3>
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {adminUsers.map(user => (
+                      <div key={user.id} className="bg-slate-900 border border-slate-800 p-2.5 rounded-lg flex flex-col gap-2">
+                        <div className="flex justify-between items-start">
+                          <span className="text-xs font-bold text-white break-all">{user.email}</span>
+                          <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">
+                            {user.isPremium ? 'Premium' : 'Básico'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                            user.paymentStatus === 'validated' ? 'bg-emerald-500/20 text-emerald-400' : 
+                            user.paymentStatus === 'pending_validation' ? 'bg-amber-500/20 text-amber-400 animate-pulse' : 
+                            'bg-slate-800 text-slate-500'
+                          }`}>
+                            {user.paymentStatus === 'validated' ? 'Pago Validado' : 
+                             user.paymentStatus === 'pending_validation' ? 'Validación Pendiente' : 
+                             'Sin Pago'}
+                          </span>
+                          
+                          {user.paymentStatus === 'pending_validation' && (
+                            <button 
+                              onClick={() => handleValidatePayment(user.id)}
+                              className="text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2 py-1 rounded transition"
+                            >
+                              Validar Acceso
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {adminUsers.length === 0 && (
+                      <p className="text-[10px] text-slate-500 text-center py-2">No hay usuarios registrados aún.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1 mt-4">
                   <span className="text-slate-500 font-bold block">Enlace de la App Publicada:</span>
                   <a href={baseUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline break-all">
                     {baseUrl}
@@ -1430,6 +1602,17 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* Global Footer */}
+        <div className="flex flex-col items-center justify-center py-6 mt-8 border-t border-slate-900 gap-3">
+          <div className="bg-slate-950/80 border border-slate-800 text-[10px] text-slate-300 px-3 py-1.5 rounded-full flex items-center gap-1.5 font-mono shadow-inner shadow-black/50">
+            <Activity className="w-3 h-3 text-emerald-400" />
+            Visitas totales: <strong className="text-white">{globalViews.toLocaleString()}</strong>
+          </div>
+          <footer className="text-center text-[10px] text-slate-600">
+            © 2026 TrendHunter.ai – Todos los derechos reservados. Prohibida copia o uso sin autorización escrita.
+          </footer>
+        </div>
 
       </main>
 

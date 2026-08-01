@@ -13,5 +13,9 @@ service cloud.firestore {
       );
       allow delete: if request.auth != null && request.auth.token.email == 'gustavocesarlopezornelas@gmail.com';
     }
+    match /analytics/global {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }
